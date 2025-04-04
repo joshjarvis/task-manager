@@ -130,3 +130,14 @@ export function isDueSoon(date: Date): boolean {
 export function isOverdue(date: Date): boolean {
   return isBefore(date, new Date());
 }
+
+// Ensure a value is a Date object
+export function ensureDate(date: Date | string | null): Date | null {
+  if (!date) return null;
+  
+  if (typeof date === 'string') {
+    return new Date(date);
+  }
+  
+  return date;
+}

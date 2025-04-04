@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Task } from '@shared/schema';
 import { CalendarViewType } from '@/lib/types';
-import { getPriorityColorHex } from '@/lib/utils';
+import { getPriorityColorHex, ensureDate } from '@/lib/utils';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -39,15 +39,13 @@ export default function Calendar({
         scheduledEnd: task.scheduledEnd
       });
       
-      // We already filtered out null values above, but TypeScript doesn't know that
-      const start = task.scheduledStart!;
-      const end = task.scheduledEnd!;
-      
+      // Make sure we have proper Date objects
+      // Apply our utility function to ensure we have Date objects
       return {
         id: task.id.toString(),
         title: task.title,
-        start: start.toString(),
-        end: end.toString(),
+        start: ensureDate(task.scheduledStart)!, // Ensure it's a Date object
+        end: ensureDate(task.scheduledEnd)!,     // Ensure it's a Date object
         backgroundColor: getPriorityColorHex(task.priority),
         borderColor: getPriorityColorHex(task.priority),
         classNames: [`${task.priority}-priority`],
@@ -191,6 +189,8 @@ export default function Calendar({
           allDaySlot={false}
           slotMinTime="08:00:00"
           slotMaxTime="20:00:00"
+          timeZone="local"
+          nowIndicator={true}
           editable={true}
           eventDrop={(info) => {
             // Handle event drops for rescheduling
