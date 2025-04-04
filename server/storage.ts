@@ -112,43 +112,75 @@ export class MemStorage implements IStorage {
     
     console.log(`Tasks to be scheduled: ${incompleteTasks.length}`);
 
-    // Simple scheduling algorithm
-    // Start scheduling from now, with working hours 9 AM to 5 PM
+    // Get the current date/time for scheduling reference
     const now = new Date();
-    let currentDate = new Date(now);
-    currentDate.setHours(9, 0, 0, 0); // Start at 9 AM
-    
-    // If current time is past 5 PM, start scheduling from tomorrow
-    if (now.getHours() >= 17) {
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    // If current time is between 9 AM and 5 PM, start from now
-    else if (now.getHours() >= 9 && now.getHours() < 17) {
-      currentDate = new Date(now);
-      // Round up to the nearest 15 minutes
-      const minutes = currentDate.getMinutes();
-      const remainder = minutes % 15;
-      if (remainder > 0) {
-        currentDate.setMinutes(minutes + (15 - remainder));
-      }
-    }
 
     // Schedule each task
     for (const task of incompleteTasks) {
+      // Check if we should use the time from the due date
+      const dueDate = new Date(task.dueDate);
+      const dueHours = dueDate.getHours();
+      const dueMinutes = dueDate.getMinutes();
+      
+      // Initialize current date for this task
+      let currentDate = new Date(now);
+      
+      // Default scheduling rules
+      // If we have a valid time in due date (not midnight), use that time instead of default 9 AM
+      if (dueHours !== 0 || dueMinutes !== 0) {
+        console.log(`Using preferred time from due date: ${dueHours}:${dueMinutes}`);
+        // Use the time specified in the due date
+        currentDate.setHours(dueHours, dueMinutes, 0, 0);
+      } else {
+        // Use default time (9 AM)
+        currentDate.setHours(9, 0, 0, 0);
+      }
+      
+      // Business rules adjustments
+      // If scheduled time is in the past, move to current time
+      if (currentDate < now) {
+        currentDate = new Date(now);
+        // Round up to the nearest 15 minutes
+        const minutes = currentDate.getMinutes();
+        const remainder = minutes % 15;
+        if (remainder > 0) {
+          currentDate.setMinutes(minutes + (15 - remainder));
+        }
+      }
+      
+      // If outside of working hours (before 7 AM or after 7 PM), adjust
+      if (currentDate.getHours() < 7 || currentDate.getHours() >= 19) {
+        // If it's evening/night, schedule for tomorrow
+        if (currentDate.getHours() >= 19) {
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        // Use due time if valid, or 9 AM as default
+        if (dueHours >= 7 && dueHours < 19) {
+          currentDate.setHours(dueHours, dueMinutes, 0, 0);
+        } else {
+          currentDate.setHours(9, 0, 0, 0);
+        }
+      }
+      
       // Get end of working day
       const endOfDay = new Date(currentDate);
-      endOfDay.setHours(17, 0, 0, 0);
-
+      endOfDay.setHours(19, 0, 0, 0); // Extended to 7 PM
+      
       // Calculate task duration in milliseconds
       const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
       
       // Check if task will fit in current day
       const taskEndTime = new Date(currentDate.getTime() + taskDurationMs);
       
-      // If task ends after 5 PM, move to next day
+      // If task ends after work hours, move to next day
       if (taskEndTime > endOfDay) {
         currentDate.setDate(currentDate.getDate() + 1);
-        currentDate.setHours(9, 0, 0, 0);
+        // Use due time if valid, or 9 AM as default
+        if (dueHours >= 7 && dueHours < 19) {
+          currentDate.setHours(dueHours, dueMinutes, 0, 0);
+        } else {
+          currentDate.setHours(9, 0, 0, 0);
+        }
       }
       
       // Set scheduled start and end
@@ -162,6 +194,9 @@ export class MemStorage implements IStorage {
         scheduledEnd: scheduledEnd.toISOString()
       });
       
+      // Enhanced logging with due date time
+      console.log(`Task due date: ${dueDate.toISOString()} (Hours: ${dueHours}, Minutes: ${dueMinutes})`);
+      
       // Update task
       const updatedTask = { 
         ...task, 
@@ -169,9 +204,6 @@ export class MemStorage implements IStorage {
         scheduledEnd 
       };
       this.tasks.set(task.id, updatedTask);
-      
-      // Move current date to end of this task
-      currentDate = new Date(scheduledEnd);
     }
 
     return Array.from(this.tasks.values());
