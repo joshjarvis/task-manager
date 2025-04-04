@@ -127,13 +127,18 @@ export class MemStorage implements IStorage {
       
       // Default scheduling rules
       // If we have a valid time in due date (not midnight), use that time instead of default 9 AM
-      if (dueHours !== 0 || dueMinutes !== 0) {
-        console.log(`Using preferred time from due date: ${dueHours}:${dueMinutes}`);
+      let useWorkingHoursTime = false;
+      
+      // Check if due time is within working hours (9 AM - 5 PM)
+      if (dueHours >= 9 && dueHours < 17) {
+        console.log(`Using preferred time from due date: ${dueHours}:${dueMinutes} (within working hours)`);
         // Use the time specified in the due date
         currentDate.setHours(dueHours, dueMinutes, 0, 0);
       } else {
-        // Use default time (9 AM)
+        console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, using 9 AM`);
+        // Use default working hours time (9 AM)
         currentDate.setHours(9, 0, 0, 0);
+        useWorkingHoursTime = true;
       }
       
       // Business rules adjustments
@@ -150,14 +155,20 @@ export class MemStorage implements IStorage {
       
       // If outside of working hours (before 9 AM or after 5 PM), adjust
       if (currentDate.getHours() < 9 || currentDate.getHours() >= 17) {
+        console.log(`Adjusted time ${currentDate.getHours()}:${currentDate.getMinutes()} is outside working hours`);
+        
         // If it's evening/night, schedule for tomorrow
         if (currentDate.getHours() >= 17) {
           currentDate.setDate(currentDate.getDate() + 1);
+          console.log("Scheduling for next day due to after-hours");
         }
-        // Use due time if valid, or 9 AM as default
-        if (dueHours >= 9 && dueHours < 17) {
+        
+        // If we already selected a valid working hours time from the due date, use it
+        if (!useWorkingHoursTime && dueHours >= 9 && dueHours < 17) {
+          console.log(`Using preferred time from due date for adjustment: ${dueHours}:${dueMinutes}`);
           currentDate.setHours(dueHours, dueMinutes, 0, 0);
         } else {
+          console.log("Setting to default 9 AM");
           currentDate.setHours(9, 0, 0, 0);
         }
       }
@@ -174,11 +185,15 @@ export class MemStorage implements IStorage {
       
       // If task ends after work hours, move to next day
       if (taskEndTime > endOfDay) {
+        console.log("Task doesn't fit in current working day, moving to next day");
         currentDate.setDate(currentDate.getDate() + 1);
-        // Use due time if valid, or 9 AM as default
-        if (dueHours >= 9 && dueHours < 17) {
+        
+        // If we already selected a valid working hours time from the due date, use it
+        if (!useWorkingHoursTime && dueHours >= 9 && dueHours < 17) {
+          console.log(`Using preferred time from due date for next day: ${dueHours}:${dueMinutes}`);
           currentDate.setHours(dueHours, dueMinutes, 0, 0);
         } else {
+          console.log("Setting next day start to default 9 AM");
           currentDate.setHours(9, 0, 0, 0);
         }
       }
