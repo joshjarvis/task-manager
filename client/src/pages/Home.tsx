@@ -48,6 +48,7 @@ export default function Home() {
   };
 
   const handleDateChange = (date: Date) => {
+    console.log("Home component received date change:", date);
     setCurrentDate(date);
   };
   

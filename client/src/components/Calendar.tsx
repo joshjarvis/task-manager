@@ -6,6 +6,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react';
 
 interface CalendarProps {
   tasks: Task[];
@@ -81,7 +82,17 @@ export default function Calendar({
   };
   
   const handleDateClick = (info: any) => {
+    console.log("Date clicked:", info.date);
     onDateChange(info.date);
+    
+    // If in month view, also change to day view for the clicked date
+    if (view === 'month') {
+      setView('day');
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.changeView('timeGridDay');
+      }
+    }
   };
 
   const handleViewChange = (viewType: CalendarViewType) => {
@@ -89,11 +100,18 @@ export default function Calendar({
     
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
+      
+      // Change the view
       calendarApi.changeView(
         viewType === 'day' ? 'timeGridDay' : 
         viewType === 'week' ? 'timeGridWeek' : 
         'dayGridMonth'
       );
+      
+      // Make sure the date is properly synced when changing views
+      console.log("View changed to:", viewType);
+      console.log("Current calendar date:", calendarApi.getDate());
+      onDateChange(calendarApi.getDate());
     }
   };
 
@@ -101,7 +119,10 @@ export default function Calendar({
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
       calendarApi.prev();
-      onDateChange(calendarApi.getDate());
+      // Get the new date and update parent component's state
+      const newDate = calendarApi.getDate();
+      console.log("Navigation: prev clicked, new date:", newDate);
+      onDateChange(newDate);
     }
   };
 
@@ -109,7 +130,10 @@ export default function Calendar({
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
       calendarApi.next();
-      onDateChange(calendarApi.getDate());
+      // Get the new date and update parent component's state
+      const newDate = calendarApi.getDate();
+      console.log("Navigation: next clicked, new date:", newDate);
+      onDateChange(newDate);
     }
   };
 
@@ -117,35 +141,26 @@ export default function Calendar({
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
       calendarApi.today();
-      onDateChange(calendarApi.getDate());
+      // Get the new date and update parent component's state
+      const newDate = calendarApi.getDate();
+      console.log("Navigation: today clicked, new date:", newDate);
+      onDateChange(newDate);
     }
   };
 
-  // Update calendar when view or date changes, or when events are loaded
+  // Update calendar when view or date changes
   useEffect(() => {
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
-      
-      // Go to task date if there's a task
-      if (events.length > 0) {
-        try {
-          // Try to extract the date from the first event
-          const firstEventDate = new Date(events[0].start);
-          console.log("Going to event date:", firstEventDate);
-          calendarApi.gotoDate(firstEventDate);
-        } catch (err) {
-          console.error("Failed to parse event date:", err);
-          // Fall back to current date
-          calendarApi.gotoDate(currentDate);
-        }
-      } else {
-        calendarApi.gotoDate(currentDate);
-      }
-      
+      calendarApi.gotoDate(currentDate);
       console.log("Calendar updated with date:", calendarApi.getDate());
-      console.log("Current events:", events);
     }
-  }, [currentDate, events]);
+  }, [currentDate]);
+  
+  // Log events when they change
+  useEffect(() => {
+    console.log("Current events:", events);
+  }, [events]);
 
   const initialView = 
     view === 'day' ? 'timeGridDay' : 
@@ -185,7 +200,7 @@ export default function Calendar({
               className="p-1 text-neutral-400 hover:text-neutral-500"
               onClick={handlePrevClick}
             >
-              <span className="material-icons">chevron_left</span>
+              <ChevronLeft className="h-5 w-5" />
             </button>
             <h3 className="font-medium">
               {currentDate.toLocaleDateString('en-US', {
@@ -198,13 +213,14 @@ export default function Calendar({
               className="p-1 text-neutral-400 hover:text-neutral-500"
               onClick={handleNextClick}
             >
-              <span className="material-icons">chevron_right</span>
+              <ChevronRight className="h-5 w-5" />
             </button>
             <button 
-              className="px-3 py-1 text-sm border rounded-md ml-2"
+              className="px-3 py-1 text-sm border rounded-md ml-2 flex items-center space-x-1"
               onClick={handleTodayClick}
             >
-              Today
+              <CalendarClock className="h-4 w-4" />
+              <span>Today</span>
             </button>
           </div>
         </div>
