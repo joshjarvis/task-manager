@@ -127,18 +127,18 @@ export class MemStorage implements IStorage {
       
       // Default scheduling rules
       // If we have a valid time in due date (not midnight), use that time instead of default 9 AM
-      let useWorkingHoursTime = false;
-      
-      // Check if due time is within working hours (9 AM - 5 PM)
+      // Always check if due time is within working hours (9 AM - 5 PM)
+      let useWorkingHoursTime = true;
       if (dueHours >= 9 && dueHours < 17) {
         console.log(`Using preferred time from due date: ${dueHours}:${dueMinutes} (within working hours)`);
         // Use the time specified in the due date
         currentDate.setHours(dueHours, dueMinutes, 0, 0);
+        useWorkingHoursTime = false; // We're using a specific valid working hours time
       } else {
         console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, using 9 AM`);
         // Use default working hours time (9 AM)
         currentDate.setHours(9, 0, 0, 0);
-        useWorkingHoursTime = true;
+        useWorkingHoursTime = true; // We're using the default working hours time
       }
       
       // Business rules adjustments
@@ -163,8 +163,8 @@ export class MemStorage implements IStorage {
           console.log("Scheduling for next day due to after-hours");
         }
         
-        // If we already selected a valid working hours time from the due date, use it
-        if (!useWorkingHoursTime && dueHours >= 9 && dueHours < 17) {
+        // Check if due time is within working hours
+        if (dueHours >= 9 && dueHours < 17) {
           console.log(`Using preferred time from due date for adjustment: ${dueHours}:${dueMinutes}`);
           currentDate.setHours(dueHours, dueMinutes, 0, 0);
         } else {
@@ -188,8 +188,8 @@ export class MemStorage implements IStorage {
         console.log("Task doesn't fit in current working day, moving to next day");
         currentDate.setDate(currentDate.getDate() + 1);
         
-        // If we already selected a valid working hours time from the due date, use it
-        if (!useWorkingHoursTime && dueHours >= 9 && dueHours < 17) {
+        // Check if due time is within working hours
+        if (dueHours >= 9 && dueHours < 17) {
           console.log(`Using preferred time from due date for next day: ${dueHours}:${dueMinutes}`);
           currentDate.setHours(dueHours, dueMinutes, 0, 0);
         } else {
