@@ -53,6 +53,15 @@ export default function TaskForm({ task, onTaskSaved, onCancel }: TaskFormProps)
 
   const onSubmit = async (data: TaskFormValues) => {
     try {
+      // Log timezone info for debugging
+      console.log("TaskForm submission timezone info:", {
+        browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        offsetMinutes: new Date().getTimezoneOffset(),
+        offsetHours: -(new Date().getTimezoneOffset()) / 60,
+        submittedDate: data.dueDate.toISOString(),
+        localDate: data.dueDate.toString()
+      });
+      
       if (task) {
         // Update existing task
         await apiRequest("PATCH", `/api/tasks/${task.id}`, data);
@@ -223,6 +232,15 @@ export default function TaskForm({ task, onTaskSaved, onCancel }: TaskFormProps)
                 </FormItem>
               )}
             />
+          </div>
+          
+          {/* Timezone note */}
+          <div className="text-xs text-muted-foreground bg-muted p-2 rounded-md">
+            <p>
+              <strong>Note:</strong> The system will schedule your task during working hours (9AM-5PM UTC).
+              Your local timezone is {Intl.DateTimeFormat().resolvedOptions().timeZone}.
+              If you select a time outside of working hours, your task will be scheduled for 9AM on the next workday.
+            </p>
           </div>
 
           <DialogFooter className="mt-6 flex justify-end space-x-3">

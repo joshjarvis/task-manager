@@ -39,11 +39,15 @@ export default function Calendar({
       const startDate = new Date(task.scheduledStart!);
       const endDate = new Date(task.scheduledEnd!);
       
-      // Format time for debugging, showing both local browser time and UTC time
+      // Calculate proper time display for debugging with timezone info
       const localTimeStart = startDate.toLocaleTimeString();
       const localTimeEnd = endDate.toLocaleTimeString();
       const utcTimeStart = startDate.toUTCString();
       const utcTimeEnd = endDate.toUTCString();
+
+      // Get local timezone offset in hours
+      const tzOffset = -(new Date().getTimezoneOffset()) / 60;
+      const tzString = tzOffset >= 0 ? `+${tzOffset}` : `${tzOffset}`;
       
       console.log("Processing task for calendar:", {
         id: task.id,
@@ -54,7 +58,9 @@ export default function Calendar({
         localEndTime: localTimeEnd,
         utcStartTime: utcTimeStart,
         utcEndTime: utcTimeEnd,
-        hours: startDate.getHours()
+        hours: startDate.getHours(),
+        browserTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezoneOffset: tzString
       });
       
       return {
@@ -148,57 +154,71 @@ export default function Calendar({
 
   return (
     <section className={className}>
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <h2 className="text-lg font-medium">Calendar</h2>
-          <div className="flex border rounded-md overflow-hidden">
+      <div className="mb-4 flex flex-col">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <h2 className="text-lg font-medium">Calendar</h2>
+            <div className="flex border rounded-md overflow-hidden">
+              <button 
+                className={`px-3 py-1 text-sm ${view === 'day' ? 'bg-primary text-white' : ''}`}
+                onClick={() => handleViewChange('day')}
+              >
+                Day
+              </button>
+              <button 
+                className={`px-3 py-1 text-sm ${view === 'week' ? 'bg-primary text-white' : ''}`}
+                onClick={() => handleViewChange('week')}
+              >
+                Week
+              </button>
+              <button 
+                className={`px-3 py-1 text-sm ${view === 'month' ? 'bg-primary text-white' : ''}`}
+                onClick={() => handleViewChange('month')}
+              >
+                Month
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
             <button 
-              className={`px-3 py-1 text-sm ${view === 'day' ? 'bg-primary text-white' : ''}`}
-              onClick={() => handleViewChange('day')}
+              className="p-1 text-neutral-400 hover:text-neutral-500"
+              onClick={handlePrevClick}
             >
-              Day
+              <span className="material-icons">chevron_left</span>
+            </button>
+            <h3 className="font-medium">
+              {currentDate.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </h3>
+            <button 
+              className="p-1 text-neutral-400 hover:text-neutral-500"
+              onClick={handleNextClick}
+            >
+              <span className="material-icons">chevron_right</span>
             </button>
             <button 
-              className={`px-3 py-1 text-sm ${view === 'week' ? 'bg-primary text-white' : ''}`}
-              onClick={() => handleViewChange('week')}
+              className="px-3 py-1 text-sm border rounded-md ml-2"
+              onClick={handleTodayClick}
             >
-              Week
-            </button>
-            <button 
-              className={`px-3 py-1 text-sm ${view === 'month' ? 'bg-primary text-white' : ''}`}
-              onClick={() => handleViewChange('month')}
-            >
-              Month
+              Today
             </button>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <button 
-            className="p-1 text-neutral-400 hover:text-neutral-500"
-            onClick={handlePrevClick}
-          >
-            <span className="material-icons">chevron_left</span>
-          </button>
-          <h3 className="font-medium">
-            {currentDate.toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </h3>
-          <button 
-            className="p-1 text-neutral-400 hover:text-neutral-500"
-            onClick={handleNextClick}
-          >
-            <span className="material-icons">chevron_right</span>
-          </button>
-          <button 
-            className="px-3 py-1 text-sm border rounded-md ml-2"
-            onClick={handleTodayClick}
-          >
-            Today
-          </button>
+        {/* Timezone info */}
+        <div className="mt-2 text-xs text-muted-foreground p-2 bg-muted rounded-md">
+          <p>
+            <strong>Note:</strong> This calendar displays times in UTC timezone. Working hours (9AM-5PM) are shown in UTC.
+            Your local timezone is {Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC{
+              -(new Date().getTimezoneOffset()) / 60 >= 0 ? 
+              '+' + (-(new Date().getTimezoneOffset()) / 60) : 
+              (-(new Date().getTimezoneOffset()) / 60)
+            }).
+          </p>
         </div>
       </div>
 
@@ -219,9 +239,9 @@ export default function Calendar({
           height="100%"
           initialDate={currentDate}
           allDaySlot={false}
-          slotMinTime="08:00:00"
-          slotMaxTime="18:00:00"
-          timeZone="local"
+          slotMinTime="00:00:00"
+          slotMaxTime="24:00:00"
+          timeZone="UTC"
           nowIndicator={true}
           editable={true}
           eventDrop={(info) => {

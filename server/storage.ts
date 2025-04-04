@@ -143,22 +143,24 @@ export class MemStorage implements IStorage {
       // Initialize scheduling time based on current time
       let scheduledTime = new Date(now);
       
-      // RULE 1: STRICT WORKING HOURS (9 AM - 5 PM)
+      // WORKING HOURS IN UTC: 9 AM - 5 PM UTC
+      // We're using UTC times for consistency with client display
+      
       // First, determine if we can use the due date time
       let useSpecificTime = false;
       
       if (dueHours >= 9 && dueHours < 17) {
-        console.log(`Due time ${dueHours}:${dueMinutes} is within working hours (9 AM - 5 PM)`);
+        console.log(`Due time ${dueHours}:${dueMinutes} is within working hours (9 AM - 5 PM UTC)`);
         // Apply due date's time to the scheduled date
         scheduledTime.setHours(dueHours, dueMinutes, 0, 0);
         useSpecificTime = true;
       } else {
-        console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, will use 9 AM`);
+        console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, will use 9 AM UTC`);
         // Default to 9 AM start time
         scheduledTime.setHours(9, 0, 0, 0);
       }
       
-      // RULE 2: NEVER SCHEDULE IN THE PAST
+      // Never schedule in the past
       if (scheduledTime < now) {
         console.log("Scheduled time is in the past, adjusting to current time");
         scheduledTime = new Date(now);
@@ -172,10 +174,10 @@ export class MemStorage implements IStorage {
         useSpecificTime = false; // Reset since we're not using due date time anymore
       }
       
-      // RULE 3: ENFORCE WORKING HOURS
+      // Enforce working hours (9 AM - 5 PM UTC)
       const currentHour = scheduledTime.getHours();
       if (currentHour < 9 || currentHour >= 17) {
-        console.log(`Current hour ${currentHour} is outside working hours (9 AM - 5 PM)`);
+        console.log(`Current hour ${currentHour} is outside working hours (9 AM - 5 PM UTC)`);
         
         // If after work hours, move to next day
         if (currentHour >= 17) {
@@ -185,14 +187,14 @@ export class MemStorage implements IStorage {
         
         // Set to 9 AM
         scheduledTime.setHours(9, 0, 0, 0);
-        console.log(`Adjusted to 9 AM: ${scheduledTime.toLocaleTimeString()}`);
+        console.log(`Adjusted to 9 AM UTC: ${scheduledTime.toLocaleTimeString()}`);
       }
       
       // Calculate task duration
       const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
       
-      // RULE 4: TASKS MUST FIT WITHIN WORKING HOURS
-      // Define end of working day (5 PM)
+      // Tasks must fit within working hours
+      // Define end of working day (5 PM UTC)
       const endOfWorkDay = new Date(scheduledTime);
       endOfWorkDay.setHours(17, 0, 0, 0);
       
@@ -200,7 +202,7 @@ export class MemStorage implements IStorage {
       const tentativeEndTime = new Date(scheduledTime.getTime() + taskDurationMs);
       
       if (tentativeEndTime > endOfWorkDay) {
-        console.log("Task would extend beyond 5 PM, moving to next working day");
+        console.log("Task would extend beyond 5 PM UTC, moving to next working day");
         scheduledTime.setDate(scheduledTime.getDate() + 1);
         scheduledTime.setHours(9, 0, 0, 0);
         console.log(`New scheduled start: ${scheduledTime.toISOString()}`);
@@ -209,6 +211,9 @@ export class MemStorage implements IStorage {
       // Final scheduled times
       const scheduledStart = new Date(scheduledTime);
       const scheduledEnd = new Date(scheduledTime.getTime() + taskDurationMs);
+      
+      // Debugging info about the difference between UTC and browser time
+      console.log(`Note: A task scheduled at 10 AM UTC will appear as around 8:30 PM in Adelaide (UTC+10:30)`);
       
       // Comprehensive logging of the final scheduling decision
       console.log(`FINAL SCHEDULING for task '${task.title}':`, {
