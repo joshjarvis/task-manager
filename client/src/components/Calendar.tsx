@@ -212,8 +212,8 @@ export default function Calendar({
           height="100%"
           initialDate={currentDate}
           allDaySlot={false}
-          slotMinTime="06:00:00"
-          slotMaxTime="22:00:00"
+          slotMinTime="08:00:00"
+          slotMaxTime="18:00:00"
           timeZone="local"
           nowIndicator={true}
           editable={true}

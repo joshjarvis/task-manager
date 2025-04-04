@@ -148,14 +148,14 @@ export class MemStorage implements IStorage {
         }
       }
       
-      // If outside of working hours (before 7 AM or after 7 PM), adjust
-      if (currentDate.getHours() < 7 || currentDate.getHours() >= 19) {
+      // If outside of working hours (before 9 AM or after 5 PM), adjust
+      if (currentDate.getHours() < 9 || currentDate.getHours() >= 17) {
         // If it's evening/night, schedule for tomorrow
-        if (currentDate.getHours() >= 19) {
+        if (currentDate.getHours() >= 17) {
           currentDate.setDate(currentDate.getDate() + 1);
         }
         // Use due time if valid, or 9 AM as default
-        if (dueHours >= 7 && dueHours < 19) {
+        if (dueHours >= 9 && dueHours < 17) {
           currentDate.setHours(dueHours, dueMinutes, 0, 0);
         } else {
           currentDate.setHours(9, 0, 0, 0);
@@ -164,7 +164,7 @@ export class MemStorage implements IStorage {
       
       // Get end of working day
       const endOfDay = new Date(currentDate);
-      endOfDay.setHours(19, 0, 0, 0); // Extended to 7 PM
+      endOfDay.setHours(17, 0, 0, 0); // Standard 5 PM end of day
       
       // Calculate task duration in milliseconds
       const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
@@ -176,7 +176,7 @@ export class MemStorage implements IStorage {
       if (taskEndTime > endOfDay) {
         currentDate.setDate(currentDate.getDate() + 1);
         // Use due time if valid, or 9 AM as default
-        if (dueHours >= 7 && dueHours < 19) {
+        if (dueHours >= 9 && dueHours < 17) {
           currentDate.setHours(dueHours, dueMinutes, 0, 0);
         } else {
           currentDate.setHours(9, 0, 0, 0);
