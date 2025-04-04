@@ -167,25 +167,63 @@ export default function TaskForm({ task, onTaskSaved, onCancel }: TaskFormProps)
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="dueDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-neutral-500">Due Date</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="date" 
-                    {...field} 
-                    value={format(field.value, "yyyy-MM-dd")}
-                    onChange={e => field.onChange(new Date(e.target.value))}
-                    className="w-full p-2 border rounded-md" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-neutral-500">Due Date</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="date" 
+                      {...field} 
+                      value={format(field.value, "yyyy-MM-dd")}
+                      onChange={e => {
+                        // Preserve the time part of the existing date
+                        const newDate = new Date(e.target.value);
+                        const currentDate = field.value;
+                        newDate.setHours(
+                          currentDate.getHours(),
+                          currentDate.getMinutes(),
+                          currentDate.getSeconds()
+                        );
+                        field.onChange(newDate);
+                      }}
+                      className="w-full p-2 border rounded-md" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-neutral-500">Due Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="time" 
+                      value={format(field.value, "HH:mm")}
+                      onChange={e => {
+                        // Preserve the date part but update the time
+                        const [hours, minutes] = e.target.value.split(':').map(Number);
+                        const newDate = new Date(field.value);
+                        newDate.setHours(hours);
+                        newDate.setMinutes(minutes);
+                        field.onChange(newDate);
+                      }}
+                      className="w-full p-2 border rounded-md" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <DialogFooter className="mt-6 flex justify-end space-x-3">
             <Button variant="outline" type="button" onClick={onCancel}>
