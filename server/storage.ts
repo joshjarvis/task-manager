@@ -36,14 +36,30 @@ export class MemStorage implements IStorage {
   async createTask(insertTask: InsertTask): Promise<Task> {
     const id = this.currentTaskId++;
     const now = new Date();
+    
+    // Create a properly typed task object with explicit type casting
     const task: Task = { 
-      ...insertTask, 
       id, 
-      createdAt: now 
+      createdAt: now,
+      title: insertTask.title,
+      description: insertTask.description || null,
+      estimatedHours: insertTask.estimatedHours,
+      priority: insertTask.priority as Priority, // Cast to ensure correct type
+      dueDate: insertTask.dueDate,
+      completed: 0,
+      scheduledStart: null,
+      scheduledEnd: null
     };
+    
     this.tasks.set(id, task);
+    
+    // Schedule tasks and then get the updated task with scheduling info
     await this.scheduleTasks();
-    return task;
+    
+    // Return the task with scheduling info
+    const updatedTask = this.tasks.get(id);
+    console.log("Task created and scheduled:", updatedTask);
+    return updatedTask || task;
   }
 
   async updateTask(id: number, taskUpdate: Partial<Task>): Promise<Task | undefined> {
@@ -70,8 +86,13 @@ export class MemStorage implements IStorage {
   }
 
   async scheduleTasks(): Promise<Task[]> {
+    console.log("⏰ Starting task scheduling...");
+    
     // Get all incomplete tasks
-    const incompleteTasks = Array.from(this.tasks.values())
+    const allTasks = Array.from(this.tasks.values());
+    console.log(`Total tasks in storage: ${allTasks.length}`);
+    
+    const incompleteTasks = allTasks
       .filter(task => !task.completed)
       .sort((a, b) => {
         // Sort by priority (high -> medium -> low)
@@ -88,6 +109,8 @@ export class MemStorage implements IStorage {
         // Then by priority
         return priorityMap[b.priority] - priorityMap[a.priority];
       });
+    
+    console.log(`Tasks to be scheduled: ${incompleteTasks.length}`);
 
     // Simple scheduling algorithm
     // Start scheduling from now, with working hours 9 AM to 5 PM
@@ -131,6 +154,13 @@ export class MemStorage implements IStorage {
       // Set scheduled start and end
       const scheduledStart = new Date(currentDate);
       const scheduledEnd = new Date(currentDate.getTime() + taskDurationMs);
+      
+      // Log task scheduling details
+      console.log(`Scheduling task '${task.title}' (ID: ${task.id}):`, {
+        estimatedHours: task.estimatedHours,
+        scheduledStart: scheduledStart.toISOString(),
+        scheduledEnd: scheduledEnd.toISOString()
+      });
       
       // Update task
       const updatedTask = { 

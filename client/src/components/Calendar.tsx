@@ -28,9 +28,18 @@ export default function Calendar({
 }: CalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
 
+  // Log all tasks to help with debugging
+  console.log("All tasks received:", tasks);
+  
   // Convert tasks to calendar events with hardcoded format since ISO strings aren't working
   const events = tasks
-    .filter(task => task.scheduledStart && task.scheduledEnd)
+    .filter(task => {
+      const hasScheduledTimes = task.scheduledStart && task.scheduledEnd;
+      if (!hasScheduledTimes) {
+        console.log("Task filtered out due to missing scheduled times:", task);
+      }
+      return hasScheduledTimes;
+    })
     .map(task => {
       console.log("Processing task for calendar:", {
         id: task.id,
