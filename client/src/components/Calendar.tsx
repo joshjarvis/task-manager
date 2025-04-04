@@ -264,6 +264,7 @@ export default function Calendar({
           slotMaxTime="24:00:00"
           timeZone="UTC"
           nowIndicator={true}
+          now={'2025-04-05T12:00:00.000Z'} // Set the "now" indicator to April 5th
           editable={true}
           eventDrop={(info) => {
             // Handle event drops for rescheduling
