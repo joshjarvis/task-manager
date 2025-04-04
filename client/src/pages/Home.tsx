@@ -17,7 +17,9 @@ export default function Home() {
   const [activeView, setActiveView] = useState<"tasks" | "calendar">("tasks");
   const [calendarView, setCalendarView] = useState<CalendarViewType>("day");
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // For testing/demo purposes, we'll use April 5, 2025 as "today"
+  // In a real app, we'd use new Date() for the current date
+  const [currentDate, setCurrentDate] = useState(new Date('2025-04-05T12:00:00.000Z'));
   
   const queryClient = useQueryClient();
   const { toast } = useToast();

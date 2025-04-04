@@ -139,8 +139,13 @@ export default function Calendar({
 
   const handleTodayClick = () => {
     if (calendarRef.current) {
+      // For testing/demo purposes, we'll use April 5, 2025 as "today"
+      // In a real app, we'd use new Date() for the current date
+      const todayDate = new Date('2025-04-05T12:00:00.000Z'); // Setting to noon to avoid timezone issues
+      
       const calendarApi = calendarRef.current.getApi();
-      calendarApi.today();
+      calendarApi.gotoDate(todayDate);
+      
       // Get the new date and update parent component's state
       const newDate = calendarApi.getDate();
       console.log("Navigation: today clicked, new date:", newDate);

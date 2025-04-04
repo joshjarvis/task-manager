@@ -35,7 +35,8 @@ export class MemStorage implements IStorage {
 
   async createTask(insertTask: Partial<Task>): Promise<Task> {
     const id = this.currentTaskId++;
-    const now = new Date();
+    // For testing/demo purposes, we're using April 5, 2025 as our reference date
+    const now = new Date('2025-04-05T12:00:00.000Z');
 
     // Create a properly typed task object
     const task: Task = { 
@@ -119,8 +120,9 @@ export class MemStorage implements IStorage {
     
     console.log(`Tasks to be scheduled: ${incompleteTasks.length}`);
 
-    // Current time - with comprehensive timezone context
-    const now = new Date();
+    // For testing/demo purposes, we're using April 5, 2025 as our reference date
+    // In a production app, we'd use new Date() for the current time
+    const now = new Date('2025-04-05T12:00:00.000Z'); // Noon on April 5th, 2025
     console.log("Current reference time:", {
       iso: now.toISOString(),
       utc: now.toUTCString(),
