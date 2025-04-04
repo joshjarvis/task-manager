@@ -221,7 +221,7 @@ export default function Calendar({
           allDaySlot={false}
           slotMinTime="08:00:00"
           slotMaxTime="18:00:00"
-          timeZone="UTC"
+          timeZone="local"
           nowIndicator={true}
           editable={true}
           eventDrop={(info) => {
