@@ -8,7 +8,7 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  estimatedHours: numeric("estimated_hours").notNull(),
+  estimatedHours: numeric("estimated_hours", { precision: 4, scale: 2 }).$type<number>().notNull(),
   priority: text("priority").notNull().$type<Priority>(),
   dueDate: timestamp("due_date").notNull(),
   completed: integer("completed").default(0).notNull(),
@@ -26,13 +26,17 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 
 // Extend the schema with validation
-export const taskFormSchema = insertTaskSchema.extend({
+export const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
+  description: z.string().nullable().optional(),
   estimatedHours: z.number().min(0.25, "Task must be at least 15 minutes"),
   priority: z.enum(["low", "medium", "high"]),
   dueDate: z.date({
     required_error: "Due date is required",
   }),
+  completed: z.number().optional(),
+  scheduledStart: z.date().nullable().optional(),
+  scheduledEnd: z.date().nullable().optional(),
 });
 
 export type TaskWithId = Task;

@@ -3,7 +3,7 @@ import { tasks, type Task, type InsertTask, type Priority } from "@shared/schema
 export interface IStorage {
   getTasks(): Promise<Task[]>;
   getTask(id: number): Promise<Task | undefined>;
-  createTask(task: InsertTask): Promise<Task>;
+  createTask(task: Partial<Task>): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<boolean>;
   scheduleTasks(): Promise<Task[]>;
@@ -33,22 +33,24 @@ export class MemStorage implements IStorage {
     return this.tasks.get(id);
   }
 
-  async createTask(insertTask: InsertTask): Promise<Task> {
+  async createTask(insertTask: Partial<Task>): Promise<Task> {
     const id = this.currentTaskId++;
     const now = new Date();
-    
-    // Create a properly typed task object with explicit type casting
+
+    // Create a properly typed task object
     const task: Task = { 
       id, 
       createdAt: now,
-      title: insertTask.title,
+      title: insertTask.title || '',
       description: insertTask.description || null,
-      estimatedHours: insertTask.estimatedHours,
-      priority: insertTask.priority as Priority, // Cast to ensure correct type
-      dueDate: insertTask.dueDate,
-      completed: 0,
-      scheduledStart: null,
-      scheduledEnd: null
+      estimatedHours: typeof insertTask.estimatedHours === 'string' 
+        ? parseFloat(insertTask.estimatedHours) 
+        : (insertTask.estimatedHours || 0),
+      priority: (insertTask.priority as Priority) || 'medium',
+      dueDate: insertTask.dueDate || new Date(),
+      completed: insertTask.completed || 0,
+      scheduledStart: insertTask.scheduledStart || null,
+      scheduledEnd: insertTask.scheduledEnd || null
     };
     
     this.tasks.set(id, task);
@@ -65,6 +67,11 @@ export class MemStorage implements IStorage {
   async updateTask(id: number, taskUpdate: Partial<Task>): Promise<Task | undefined> {
     const task = this.tasks.get(id);
     if (!task) return undefined;
+
+    // Handle type conversion for estimatedHours if it's a string
+    if (taskUpdate.estimatedHours !== undefined && typeof taskUpdate.estimatedHours === 'string') {
+      taskUpdate.estimatedHours = parseFloat(taskUpdate.estimatedHours);
+    }
 
     const updatedTask = { ...task, ...taskUpdate };
     this.tasks.set(id, updatedTask);
@@ -122,7 +129,10 @@ export class MemStorage implements IStorage {
       minutes: now.getMinutes()
     });
 
-    // Schedule each task with strict timezone consistency
+    // Keep track of the latest scheduled end time to avoid overlaps
+    let latestScheduledEndTime = new Date(0); // Start with epoch time
+    
+    // Schedule each task with strict timezone consistency and sequential scheduling
     for (const task of incompleteTasks) {
       console.log(`\n----- Scheduling task: ${task.title} (ID: ${task.id}) -----`);
       
@@ -193,6 +203,13 @@ export class MemStorage implements IStorage {
       // Calculate task duration
       const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
       
+      // Check if this task needs to be scheduled after the latest end time
+      // This ensures sequential scheduling and no overlaps
+      if (latestScheduledEndTime > new Date(0) && scheduledTime < latestScheduledEndTime) {
+        console.log(`Task would overlap with previous task, adjusting start time to ${latestScheduledEndTime.toISOString()}`);
+        scheduledTime = new Date(latestScheduledEndTime);
+      }
+      
       // Tasks must fit within working hours
       // Define end of working day (5 PM UTC)
       const endOfWorkDay = new Date(scheduledTime);
@@ -211,6 +228,9 @@ export class MemStorage implements IStorage {
       // Final scheduled times
       const scheduledStart = new Date(scheduledTime);
       const scheduledEnd = new Date(scheduledTime.getTime() + taskDurationMs);
+      
+      // Update the latest end time to ensure the next task starts after this one
+      latestScheduledEndTime = new Date(scheduledEnd);
       
       // Debugging info about the difference between UTC and browser time
       console.log(`Note: A task scheduled at 10 AM UTC will appear as around 8:30 PM in Adelaide (UTC+10:30)`);

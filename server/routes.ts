@@ -39,14 +39,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create task
   apiRouter.post("/tasks", async (req, res) => {
     try {
-      // Validate task data
+      // Validate and process task data
       const taskData = taskFormSchema.parse({
         ...req.body,
         // Convert string date to Date object
         dueDate: new Date(req.body.dueDate),
+        // Make sure estimatedHours is a number
+        estimatedHours: Number(req.body.estimatedHours)
       });
       
       // Create task
+      // Note: scheduleTasks is automatically called within createTask method
       const task = await storage.createTask(taskData);
       res.status(201).json(task);
     } catch (error) {
@@ -73,13 +76,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Task not found" });
       }
       
-      // Convert dueDate to Date if provided
+      // Process update data
       const updateData = { ...req.body };
+      
+      // Convert dueDate to Date if provided
       if (updateData.dueDate) {
         updateData.dueDate = new Date(updateData.dueDate);
       }
       
+      // Convert estimatedHours to number if provided
+      if (updateData.estimatedHours !== undefined) {
+        updateData.estimatedHours = Number(updateData.estimatedHours);
+      }
+      
       // Update task
+      // Note: scheduleTasks is automatically called within updateTask method when needed
       const updatedTask = await storage.updateTask(id, updateData);
       res.json(updatedTask);
     } catch (error) {
@@ -102,6 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deleted = await storage.deleteTask(id);
       
       if (deleted) {
+        // Note: scheduleTasks is automatically called within deleteTask method
         res.status(204).end();
       } else {
         res.status(500).json({ message: "Failed to delete task" });
