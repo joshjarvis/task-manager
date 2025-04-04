@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.fc-event {
+  cursor: pointer;
+}
+
+.fc-event:hover {
+  filter: brightness(0.95);
+}
+
+.fc-daygrid-event {
+  white-space: normal !important;
+}
+
+.fc-event.low-priority {
+  background-color: hsl(122, 39%, 49%);
+  border-color: hsl(122, 39%, 44%);
+}
+
+.fc-event.medium-priority {
+  background-color: hsl(36, 100%, 50%);
+  border-color: hsl(36, 100%, 45%);
+}
+
+.fc-event.high-priority {
+  background-color: hsl(4, 90%, 58%);
+  border-color: hsl(4, 90%, 53%);
+}
+
+.task-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
