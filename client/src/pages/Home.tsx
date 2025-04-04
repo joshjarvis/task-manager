@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Task } from "@shared/schema";
 import Header from "@/components/Header";
@@ -25,6 +25,7 @@ export default function Home() {
 
   const { data: tasks = [], isLoading, error } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
+    // Use callbacks to log in useEffect instead
   });
 
   const handleAddTask = () => {
@@ -49,6 +50,13 @@ export default function Home() {
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
   };
+  
+  // Log tasks data when it changes
+  useEffect(() => {
+    if (tasks.length > 0) {
+      console.log("Tasks data updated:", tasks);
+    }
+  }, [tasks]);
 
   const filteredTasks = tasks.filter(task => {
     if (searchQuery) {

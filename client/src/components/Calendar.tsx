@@ -31,16 +31,29 @@ export default function Calendar({
   // Convert tasks to calendar events
   const events = tasks
     .filter(task => task.scheduledStart && task.scheduledEnd)
-    .map(task => ({
-      id: task.id.toString(),
-      title: task.title,
-      start: task.scheduledStart,
-      end: task.scheduledEnd,
-      backgroundColor: getPriorityColorHex(task.priority),
-      borderColor: getPriorityColorHex(task.priority),
-      classNames: [`${task.priority}-priority`],
-      extendedProps: { task }
-    }));
+    .map(task => {
+      console.log("Processing task for calendar:", {
+        id: task.id,
+        title: task.title,
+        scheduledStart: task.scheduledStart,
+        scheduledEnd: task.scheduledEnd
+      });
+      
+      // We already filtered out null values above, but TypeScript doesn't know that
+      const start = task.scheduledStart!;
+      const end = task.scheduledEnd!;
+      
+      return {
+        id: task.id.toString(),
+        title: task.title,
+        start: start.toString(),
+        end: end.toString(),
+        backgroundColor: getPriorityColorHex(task.priority),
+        borderColor: getPriorityColorHex(task.priority),
+        classNames: [`${task.priority}-priority`],
+        extendedProps: { task }
+      };
+    });
 
   const handleEventClick = (info: any) => {
     const task = info.event.extendedProps.task;
@@ -93,8 +106,10 @@ export default function Calendar({
     if (calendarRef.current) {
       const calendarApi = calendarRef.current.getApi();
       calendarApi.gotoDate(currentDate);
+      console.log("Calendar updated with date:", currentDate);
+      console.log("Current events:", events);
     }
-  }, [currentDate]);
+  }, [currentDate, events]);
 
   const initialView = 
     view === 'day' ? 'timeGridDay' : 
