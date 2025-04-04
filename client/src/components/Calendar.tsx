@@ -31,45 +31,30 @@ export default function Calendar({
   // Log all tasks to help with debugging
   console.log("All tasks received:", tasks);
   
-  // Convert tasks to calendar events with hardcoded format since ISO strings aren't working
+  // Convert tasks to calendar events
   const events = tasks
-    .filter(task => {
-      const hasScheduledTimes = task.scheduledStart && task.scheduledEnd;
-      if (!hasScheduledTimes) {
-        console.log("Task filtered out due to missing scheduled times:", task);
-      }
-      return hasScheduledTimes;
-    })
+    .filter(task => task.scheduledStart && task.scheduledEnd)
     .map(task => {
+      // Get Date objects for the scheduled times, making sure they're clean
+      const startDate = new Date(task.scheduledStart!);
+      const endDate = new Date(task.scheduledEnd!);
+      
       console.log("Processing task for calendar:", {
         id: task.id,
         title: task.title,
         scheduledStart: task.scheduledStart,
-        scheduledEnd: task.scheduledEnd
+        scheduledEnd: task.scheduledEnd,
+        startDate: startDate.toISOString(),
+        startTime: startDate.toLocaleTimeString(), 
+        endDate: endDate.toISOString(),
+        endTime: endDate.toLocaleTimeString()
       });
-      
-      // Create formatted strings that FullCalendar can reliably parse
-      // Format: '2025-04-04T09:30:00'
-      const startDate = new Date(task.scheduledStart!);
-      const endDate = new Date(task.scheduledEnd!);
-      
-      // Format into YYYY-MM-DDTHH:MM:SS
-      const formatCalendarDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-      };
       
       return {
         id: task.id.toString(),
         title: task.title,
-        start: formatCalendarDate(startDate),
-        end: formatCalendarDate(endDate),
+        start: startDate,  // Pass native Date objects directly to FullCalendar
+        end: endDate,      // FullCalendar will handle timezone conversion internally
         backgroundColor: getPriorityColorHex(task.priority),
         borderColor: getPriorityColorHex(task.priority),
         classNames: [`${task.priority}-priority`],
@@ -227,8 +212,8 @@ export default function Calendar({
           height="100%"
           initialDate={currentDate}
           allDaySlot={false}
-          slotMinTime="08:00:00"
-          slotMaxTime="20:00:00"
+          slotMinTime="06:00:00"
+          slotMaxTime="22:00:00"
           timeZone="local"
           nowIndicator={true}
           editable={true}
