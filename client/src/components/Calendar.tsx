@@ -39,15 +39,22 @@ export default function Calendar({
       const startDate = new Date(task.scheduledStart!);
       const endDate = new Date(task.scheduledEnd!);
       
+      // Format time for debugging, showing both local browser time and UTC time
+      const localTimeStart = startDate.toLocaleTimeString();
+      const localTimeEnd = endDate.toLocaleTimeString();
+      const utcTimeStart = startDate.toUTCString();
+      const utcTimeEnd = endDate.toUTCString();
+      
       console.log("Processing task for calendar:", {
         id: task.id,
         title: task.title,
         scheduledStart: task.scheduledStart,
         scheduledEnd: task.scheduledEnd,
-        startDate: startDate.toISOString(),
-        startTime: startDate.toLocaleTimeString(), 
-        endDate: endDate.toISOString(),
-        endTime: endDate.toLocaleTimeString()
+        localStartTime: localTimeStart,
+        localEndTime: localTimeEnd,
+        utcStartTime: utcTimeStart,
+        utcEndTime: utcTimeEnd,
+        hours: startDate.getHours()
       });
       
       return {
@@ -214,7 +221,7 @@ export default function Calendar({
           allDaySlot={false}
           slotMinTime="08:00:00"
           slotMaxTime="18:00:00"
-          timeZone="local"
+          timeZone="UTC"
           nowIndicator={true}
           editable={true}
           eventDrop={(info) => {

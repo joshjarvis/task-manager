@@ -112,107 +112,122 @@ export class MemStorage implements IStorage {
     
     console.log(`Tasks to be scheduled: ${incompleteTasks.length}`);
 
-    // Get the current date/time for scheduling reference
+    // Current time - with comprehensive timezone context
     const now = new Date();
+    console.log("Current reference time:", {
+      iso: now.toISOString(),
+      utc: now.toUTCString(),
+      local: now.toString(),
+      hours: now.getHours(),
+      minutes: now.getMinutes()
+    });
 
-    // Schedule each task
+    // Schedule each task with strict timezone consistency
     for (const task of incompleteTasks) {
-      // Check if we should use the time from the due date
+      console.log(`\n----- Scheduling task: ${task.title} (ID: ${task.id}) -----`);
+      
+      // Parse due date with explicit timezone information
       const dueDate = new Date(task.dueDate);
       const dueHours = dueDate.getHours();
       const dueMinutes = dueDate.getMinutes();
       
-      // Initialize current date for this task
-      let currentDate = new Date(now);
-      
-      // Default scheduling rules
-      // If we have a valid time in due date (not midnight), use that time instead of default 9 AM
-      // Always check if due time is within working hours (9 AM - 5 PM)
-      let useWorkingHoursTime = true;
-      if (dueHours >= 9 && dueHours < 17) {
-        console.log(`Using preferred time from due date: ${dueHours}:${dueMinutes} (within working hours)`);
-        // Use the time specified in the due date
-        currentDate.setHours(dueHours, dueMinutes, 0, 0);
-        useWorkingHoursTime = false; // We're using a specific valid working hours time
-      } else {
-        console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, using 9 AM`);
-        // Use default working hours time (9 AM)
-        currentDate.setHours(9, 0, 0, 0);
-        useWorkingHoursTime = true; // We're using the default working hours time
-      }
-      
-      // Business rules adjustments
-      // If scheduled time is in the past, move to current time
-      if (currentDate < now) {
-        currentDate = new Date(now);
-        // Round up to the nearest 15 minutes
-        const minutes = currentDate.getMinutes();
-        const remainder = minutes % 15;
-        if (remainder > 0) {
-          currentDate.setMinutes(minutes + (15 - remainder));
-        }
-      }
-      
-      // If outside of working hours (before 9 AM or after 5 PM), adjust
-      if (currentDate.getHours() < 9 || currentDate.getHours() >= 17) {
-        console.log(`Adjusted time ${currentDate.getHours()}:${currentDate.getMinutes()} is outside working hours`);
-        
-        // If it's evening/night, schedule for tomorrow
-        if (currentDate.getHours() >= 17) {
-          currentDate.setDate(currentDate.getDate() + 1);
-          console.log("Scheduling for next day due to after-hours");
-        }
-        
-        // Check if due time is within working hours
-        if (dueHours >= 9 && dueHours < 17) {
-          console.log(`Using preferred time from due date for adjustment: ${dueHours}:${dueMinutes}`);
-          currentDate.setHours(dueHours, dueMinutes, 0, 0);
-        } else {
-          console.log("Setting to default 9 AM");
-          currentDate.setHours(9, 0, 0, 0);
-        }
-      }
-      
-      // Get end of working day
-      const endOfDay = new Date(currentDate);
-      endOfDay.setHours(17, 0, 0, 0); // Standard 5 PM end of day
-      
-      // Calculate task duration in milliseconds
-      const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
-      
-      // Check if task will fit in current day
-      const taskEndTime = new Date(currentDate.getTime() + taskDurationMs);
-      
-      // If task ends after work hours, move to next day
-      if (taskEndTime > endOfDay) {
-        console.log("Task doesn't fit in current working day, moving to next day");
-        currentDate.setDate(currentDate.getDate() + 1);
-        
-        // Check if due time is within working hours
-        if (dueHours >= 9 && dueHours < 17) {
-          console.log(`Using preferred time from due date for next day: ${dueHours}:${dueMinutes}`);
-          currentDate.setHours(dueHours, dueMinutes, 0, 0);
-        } else {
-          console.log("Setting next day start to default 9 AM");
-          currentDate.setHours(9, 0, 0, 0);
-        }
-      }
-      
-      // Set scheduled start and end
-      const scheduledStart = new Date(currentDate);
-      const scheduledEnd = new Date(currentDate.getTime() + taskDurationMs);
-      
-      // Log task scheduling details
-      console.log(`Scheduling task '${task.title}' (ID: ${task.id}):`, {
-        estimatedHours: task.estimatedHours,
-        scheduledStart: scheduledStart.toISOString(),
-        scheduledEnd: scheduledEnd.toISOString()
+      console.log(`Due date information:`, {
+        original: task.dueDate,
+        parsed: dueDate.toString(),
+        iso: dueDate.toISOString(),
+        utc: dueDate.toUTCString(),
+        hours: dueHours,
+        minutes: dueMinutes
       });
       
-      // Enhanced logging with due date time
-      console.log(`Task due date: ${dueDate.toISOString()} (Hours: ${dueHours}, Minutes: ${dueMinutes})`);
+      // Initialize scheduling time based on current time
+      let scheduledTime = new Date(now);
       
-      // Update task
+      // RULE 1: STRICT WORKING HOURS (9 AM - 5 PM)
+      // First, determine if we can use the due date time
+      let useSpecificTime = false;
+      
+      if (dueHours >= 9 && dueHours < 17) {
+        console.log(`Due time ${dueHours}:${dueMinutes} is within working hours (9 AM - 5 PM)`);
+        // Apply due date's time to the scheduled date
+        scheduledTime.setHours(dueHours, dueMinutes, 0, 0);
+        useSpecificTime = true;
+      } else {
+        console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, will use 9 AM`);
+        // Default to 9 AM start time
+        scheduledTime.setHours(9, 0, 0, 0);
+      }
+      
+      // RULE 2: NEVER SCHEDULE IN THE PAST
+      if (scheduledTime < now) {
+        console.log("Scheduled time is in the past, adjusting to current time");
+        scheduledTime = new Date(now);
+        
+        // Round to next 15-minute interval for clean scheduling
+        const minutes = scheduledTime.getMinutes();
+        const remainder = minutes % 15;
+        if (remainder > 0) {
+          scheduledTime.setMinutes(minutes + (15 - remainder));
+        }
+        useSpecificTime = false; // Reset since we're not using due date time anymore
+      }
+      
+      // RULE 3: ENFORCE WORKING HOURS
+      const currentHour = scheduledTime.getHours();
+      if (currentHour < 9 || currentHour >= 17) {
+        console.log(`Current hour ${currentHour} is outside working hours (9 AM - 5 PM)`);
+        
+        // If after work hours, move to next day
+        if (currentHour >= 17) {
+          scheduledTime.setDate(scheduledTime.getDate() + 1);
+          console.log(`Moving to next day: ${scheduledTime.toDateString()}`);
+        }
+        
+        // Set to 9 AM
+        scheduledTime.setHours(9, 0, 0, 0);
+        console.log(`Adjusted to 9 AM: ${scheduledTime.toLocaleTimeString()}`);
+      }
+      
+      // Calculate task duration
+      const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
+      
+      // RULE 4: TASKS MUST FIT WITHIN WORKING HOURS
+      // Define end of working day (5 PM)
+      const endOfWorkDay = new Date(scheduledTime);
+      endOfWorkDay.setHours(17, 0, 0, 0);
+      
+      // Calculate when the task would end
+      const tentativeEndTime = new Date(scheduledTime.getTime() + taskDurationMs);
+      
+      if (tentativeEndTime > endOfWorkDay) {
+        console.log("Task would extend beyond 5 PM, moving to next working day");
+        scheduledTime.setDate(scheduledTime.getDate() + 1);
+        scheduledTime.setHours(9, 0, 0, 0);
+        console.log(`New scheduled start: ${scheduledTime.toISOString()}`);
+      }
+      
+      // Final scheduled times
+      const scheduledStart = new Date(scheduledTime);
+      const scheduledEnd = new Date(scheduledTime.getTime() + taskDurationMs);
+      
+      // Comprehensive logging of the final scheduling decision
+      console.log(`FINAL SCHEDULING for task '${task.title}':`, {
+        estimatedHours: task.estimatedHours,
+        startTime: {
+          iso: scheduledStart.toISOString(),
+          utc: scheduledStart.toUTCString(),
+          hours: scheduledStart.getHours(),
+          minutes: scheduledStart.getMinutes()
+        },
+        endTime: {
+          iso: scheduledEnd.toISOString(),
+          utc: scheduledEnd.toUTCString(),
+          hours: scheduledEnd.getHours(),
+          minutes: scheduledEnd.getMinutes()
+        }
+      });
+      
+      // Update the task with scheduled times
       const updatedTask = { 
         ...task, 
         scheduledStart, 
