@@ -85,14 +85,14 @@ export default function TaskForm({ task, onTaskSaved, onCancel }: TaskFormProps)
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="mb-4">
         <DialogTitle className="text-xl font-medium">
           {task ? "Edit Task" : "New Task"}
         </DialogTitle>
       </DialogHeader>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
             name="title"
@@ -243,7 +243,7 @@ export default function TaskForm({ task, onTaskSaved, onCancel }: TaskFormProps)
             </p>
           </div>
 
-          <DialogFooter className="mt-6 flex justify-end space-x-3">
+          <DialogFooter className="mt-6 flex justify-end space-x-3 sticky bottom-0 bg-background pt-2 pb-1">
             <Button variant="outline" type="button" onClick={onCancel}>
               Cancel
             </Button>
