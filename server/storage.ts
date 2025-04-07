@@ -1,5 +1,17 @@
 import { tasks, type Task, type InsertTask, type Priority } from "@shared/schema";
 
+// Add dayjs and its timezone plugin for better timezone handling
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// Initialize dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// Set default timezone to Adelaide
+dayjs.tz.setDefault('Australia/Adelaide');
+
 export interface IStorage {
   getTasks(): Promise<Task[]>;
   getTask(id: number): Promise<Task | undefined>;
@@ -35,11 +47,8 @@ export class MemStorage implements IStorage {
 
   async createTask(insertTask: Partial<Task>): Promise<Task> {
     const id = this.currentTaskId++;
-    // For testing/demo purposes, we're using April 5, 2025 as our reference date
-    // Setting to 8:30 AM to ensure tasks start at 9:00 AM when they follow the scheduling algorithm
-    const now = new Date('2025-04-05T08:30:00.000Z');
-
-    // Create a properly typed task object
+    const now = new Date();
+    
     const task: Task = { 
       id, 
       createdAt: now,
@@ -49,7 +58,7 @@ export class MemStorage implements IStorage {
         ? parseFloat(insertTask.estimatedHours) 
         : (insertTask.estimatedHours || 0),
       priority: (insertTask.priority as Priority) || 'medium',
-      dueDate: insertTask.dueDate || new Date(),
+      dueDate: insertTask.dueDate ? new Date(insertTask.dueDate) : now,
       completed: insertTask.completed || 0,
       scheduledStart: insertTask.scheduledStart || null,
       scheduledEnd: insertTask.scheduledEnd || null
@@ -60,7 +69,6 @@ export class MemStorage implements IStorage {
     // Schedule tasks and then get the updated task with scheduling info
     await this.scheduleTasks();
     
-    // Return the task with scheduling info
     const updatedTask = this.tasks.get(id);
     console.log("Task created and scheduled:", updatedTask);
     return updatedTask || task;
@@ -70,7 +78,6 @@ export class MemStorage implements IStorage {
     const task = this.tasks.get(id);
     if (!task) return undefined;
 
-    // Handle type conversion for estimatedHours if it's a string
     if (taskUpdate.estimatedHours !== undefined && typeof taskUpdate.estimatedHours === 'string') {
       taskUpdate.estimatedHours = parseFloat(taskUpdate.estimatedHours);
     }
@@ -78,7 +85,6 @@ export class MemStorage implements IStorage {
     const updatedTask = { ...task, ...taskUpdate };
     this.tasks.set(id, updatedTask);
     
-    // If task attributes that affect scheduling are updated, reschedule
     if (taskUpdate.estimatedHours || taskUpdate.priority || taskUpdate.dueDate) {
       await this.scheduleTasks();
     }
@@ -97,172 +103,75 @@ export class MemStorage implements IStorage {
   async scheduleTasks(): Promise<Task[]> {
     console.log("⏰ Starting task scheduling...");
     
-    // Get all incomplete tasks
     const allTasks = Array.from(this.tasks.values());
     console.log(`Total tasks in storage: ${allTasks.length}`);
     
     const incompleteTasks = allTasks
       .filter(task => !task.completed)
       .sort((a, b) => {
-        // Sort by priority (high -> medium -> low)
-        const priorityMap: Record<Priority, number> = { 
-          high: 3, 
-          medium: 2, 
-          low: 1 
-        };
+        const priorityMap: Record<Priority, number> = { high: 3, medium: 2, low: 1 };
         
-        // First sort by due date
+        // Sort by due date first, then by priority
         const dateComparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         if (dateComparison !== 0) return dateComparison;
-        
-        // Then by priority
         return priorityMap[b.priority] - priorityMap[a.priority];
       });
     
     console.log(`Tasks to be scheduled: ${incompleteTasks.length}`);
-
-    // For testing/demo purposes, we're using April 5, 2025 as our reference date
-    // In a production app, we'd use new Date() for the current time
-    // Setting to 8:30 AM to ensure tasks start at 9:00 AM when they follow the scheduling algorithm
-    const now = new Date('2025-04-05T08:30:00.000Z');
-    console.log("Current reference time:", {
-      iso: now.toISOString(),
-      utc: now.toUTCString(),
-      local: now.toString(),
-      hours: now.getHours(),
-      minutes: now.getMinutes()
-    });
-
-    // Keep track of the latest scheduled end time to avoid overlaps
-    let latestScheduledEndTime = new Date(0); // Start with epoch time
     
-    // Schedule each task with strict timezone consistency and sequential scheduling
+    // Get current date and time
+    const now = new Date();
+    console.log("Current time:", now.toLocaleString());
+
+    // Track scheduled time slots to avoid overlaps
+    const scheduledSlots: { start: Date; end: Date }[] = [];
+    
     for (const task of incompleteTasks) {
       console.log(`\n----- Scheduling task: ${task.title} (ID: ${task.id}) -----`);
       
-      // Parse due date with explicit timezone information
       const dueDate = new Date(task.dueDate);
-      const dueHours = dueDate.getHours();
-      const dueMinutes = dueDate.getMinutes();
+      console.log("Due date:", dueDate.toLocaleString());
       
-      console.log(`Due date information:`, {
-        original: task.dueDate,
-        parsed: dueDate.toString(),
-        iso: dueDate.toISOString(),
-        utc: dueDate.toUTCString(),
-        hours: dueHours,
-        minutes: dueMinutes
-      });
+      // Simple scheduling: always schedule at 9 AM on the due date
+      // If due date is in past, schedule for 9 AM tomorrow
+      let scheduledDate = new Date(dueDate);
       
-      // Initialize scheduling time based on current time
-      let scheduledTime = new Date(now);
+      // Set time to 9:00 AM
+      scheduledDate.setHours(9, 0, 0, 0);
       
-      // WORKING HOURS IN UTC: 9 AM - 5 PM UTC
-      // We're using UTC times for consistency with client display
-      
-      // First, determine if we can use the due date time
-      let useSpecificTime = false;
-      
-      if (dueHours >= 9 && dueHours < 17) {
-        console.log(`Due time ${dueHours}:${dueMinutes} is within working hours (9 AM - 5 PM UTC)`);
-        // Apply due date's time to the scheduled date
-        scheduledTime.setHours(dueHours, dueMinutes, 0, 0);
-        useSpecificTime = true;
-      } else {
-        console.log(`Due time ${dueHours}:${dueMinutes} is outside working hours, will use 9 AM UTC`);
-        // Default to 9 AM start time
-        scheduledTime.setHours(9, 0, 0, 0);
+      // If the due date is in the past, schedule for tomorrow
+      if (scheduledDate < now) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+        scheduledDate = tomorrow;
+        console.log("Due date is in the past, scheduling for tomorrow at 9 AM:", scheduledDate.toLocaleString());
       }
       
-      // Never schedule in the past
-      if (scheduledTime < now) {
-        console.log("Scheduled time is in the past, adjusting to current time");
-        scheduledTime = new Date(now);
-        
-        // Round to next 15-minute interval for clean scheduling
-        const minutes = scheduledTime.getMinutes();
-        const remainder = minutes % 15;
-        if (remainder > 0) {
-          scheduledTime.setMinutes(minutes + (15 - remainder));
-        }
-        useSpecificTime = false; // Reset since we're not using due date time anymore
-      }
-      
-      // Enforce working hours (9 AM - 5 PM UTC)
-      const currentHour = scheduledTime.getHours();
-      if (currentHour < 9 || currentHour >= 17) {
-        console.log(`Current hour ${currentHour} is outside working hours (9 AM - 5 PM UTC)`);
-        
-        // If after work hours, move to next day
-        if (currentHour >= 17) {
-          scheduledTime.setDate(scheduledTime.getDate() + 1);
-          console.log(`Moving to next day: ${scheduledTime.toDateString()}`);
-        }
-        
-        // Set to 9 AM
-        scheduledTime.setHours(9, 0, 0, 0);
-        console.log(`Adjusted to 9 AM UTC: ${scheduledTime.toLocaleTimeString()}`);
-      }
-      
-      // Calculate task duration
+      // Calculate end time based on estimated hours
       const taskDurationMs = Number(task.estimatedHours) * 60 * 60 * 1000;
+      const scheduledEnd = new Date(scheduledDate.getTime() + taskDurationMs);
       
-      // Check if this task needs to be scheduled after the latest end time
-      // This ensures sequential scheduling and no overlaps
-      if (latestScheduledEndTime > new Date(0) && scheduledTime < latestScheduledEndTime) {
-        console.log(`Task would overlap with previous task, adjusting start time to ${latestScheduledEndTime.toISOString()}`);
-        scheduledTime = new Date(latestScheduledEndTime);
-      }
-      
-      // Tasks must fit within working hours
-      // Define end of working day (5 PM UTC)
-      const endOfWorkDay = new Date(scheduledTime);
-      endOfWorkDay.setHours(17, 0, 0, 0);
-      
-      // Calculate when the task would end
-      const tentativeEndTime = new Date(scheduledTime.getTime() + taskDurationMs);
-      
-      if (tentativeEndTime > endOfWorkDay) {
-        console.log("Task would extend beyond 5 PM UTC, moving to next working day");
-        scheduledTime.setDate(scheduledTime.getDate() + 1);
-        scheduledTime.setHours(9, 0, 0, 0);
-        console.log(`New scheduled start: ${scheduledTime.toISOString()}`);
-      }
-      
-      // Final scheduled times
-      const scheduledStart = new Date(scheduledTime);
-      const scheduledEnd = new Date(scheduledTime.getTime() + taskDurationMs);
-      
-      // Update the latest end time to ensure the next task starts after this one
-      latestScheduledEndTime = new Date(scheduledEnd);
-      
-      // Debugging info about the difference between UTC and browser time
-      console.log(`Note: A task scheduled at 10 AM UTC will appear as around 8:30 PM in Adelaide (UTC+10:30)`);
-      
-      // Comprehensive logging of the final scheduling decision
-      console.log(`FINAL SCHEDULING for task '${task.title}':`, {
-        estimatedHours: task.estimatedHours,
-        startTime: {
-          iso: scheduledStart.toISOString(),
-          utc: scheduledStart.toUTCString(),
-          hours: scheduledStart.getHours(),
-          minutes: scheduledStart.getMinutes()
-        },
-        endTime: {
-          iso: scheduledEnd.toISOString(),
-          utc: scheduledEnd.toUTCString(),
-          hours: scheduledEnd.getHours(),
-          minutes: scheduledEnd.getMinutes()
-        }
+      console.log("Task scheduled for:", {
+        date: scheduledDate.toLocaleDateString(),
+        startTime: scheduledDate.toLocaleTimeString(),
+        endTime: scheduledEnd.toLocaleTimeString(),
+        estimatedHours: task.estimatedHours
       });
       
       // Update the task with scheduled times
       const updatedTask = { 
         ...task, 
-        scheduledStart, 
-        scheduledEnd 
+        scheduledStart: scheduledDate,
+        scheduledEnd: scheduledEnd
       };
       this.tasks.set(task.id, updatedTask);
+      
+      // Add to scheduled slots for future overlap checking
+      scheduledSlots.push({
+        start: scheduledDate,
+        end: scheduledEnd
+      });
     }
 
     return Array.from(this.tasks.values());

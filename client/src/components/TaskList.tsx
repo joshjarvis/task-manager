@@ -69,25 +69,27 @@ export default function TaskList({
 
   return (
     <section className={className}>
-      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+      <div className="bg-white rounded-lg p-4 mb-4 border border-gray-100">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">Tasks</h2>
-          <div className="flex space-x-2">
+          <h2 className="text-base font-medium text-gray-800">Tasks</h2>
+          <div className="flex space-x-1">
             <button 
-              className="p-1 text-neutral-400 hover:text-neutral-500"
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
               onClick={() => handleSortChange("priority")}
+              title="Sort by priority"
             >
-              <span className="material-icons">
+              <span className="material-icons text-sm">
                 {sortBy === "priority" 
                   ? (sortDirection === "asc" ? "arrow_upward" : "arrow_downward") 
                   : "filter_list"}
               </span>
             </button>
             <button 
-              className="p-1 text-neutral-400 hover:text-neutral-500"
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
               onClick={() => handleSortChange("dueDate")}
+              title="Sort by due date"
             >
-              <span className="material-icons">
+              <span className="material-icons text-sm">
                 {sortBy === "dueDate" 
                   ? (sortDirection === "asc" ? "arrow_upward" : "arrow_downward") 
                   : "sort"}
@@ -97,35 +99,52 @@ export default function TaskList({
               <input 
                 type="text" 
                 placeholder="Search" 
-                className="pl-8 pr-2 py-1 text-sm border rounded-md w-28 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="pl-7 pr-2 py-1 text-sm border rounded-md w-28 focus:outline-none focus:ring-1 focus:ring-gray-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <span className="material-icons text-neutral-400 absolute left-2 top-1/2 transform -translate-y-1/2 text-sm">search</span>
+              <span className="material-icons text-gray-400 absolute left-1.5 top-1/2 transform -translate-y-1/2 text-sm">search</span>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 mb-4">
+
+        <div className="flex flex-wrap gap-1.5 mb-4">
           <button 
-            className={`px-3 py-1 rounded-full text-sm ${activeFilter === "all" ? "bg-primary text-white" : "bg-neutral-100"}`}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              activeFilter === "all" 
+                ? "bg-blue-50 text-blue-600 border border-blue-100" 
+                : "bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100"
+            }`}
             onClick={() => setActiveFilter("all")}
           >
             All
           </button>
           <button 
-            className={`px-3 py-1 rounded-full text-sm ${activeFilter === "today" ? "bg-primary text-white" : "bg-neutral-100"}`}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              activeFilter === "today" 
+                ? "bg-blue-50 text-blue-600 border border-blue-100" 
+                : "bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100"
+            }`}
             onClick={() => setActiveFilter("today")}
           >
             Today
           </button>
           <button 
-            className={`px-3 py-1 rounded-full text-sm ${activeFilter === "week" ? "bg-primary text-white" : "bg-neutral-100"}`}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              activeFilter === "week" 
+                ? "bg-blue-50 text-blue-600 border border-blue-100" 
+                : "bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100"
+            }`}
             onClick={() => setActiveFilter("week")}
           >
             This Week
           </button>
           <button 
-            className={`px-3 py-1 rounded-full text-sm ${activeFilter === "overdue" ? "bg-primary text-white" : "bg-neutral-100"}`}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              activeFilter === "overdue" 
+                ? "bg-blue-50 text-blue-600 border border-blue-100" 
+                : "bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100"
+            }`}
             onClick={() => setActiveFilter("overdue")}
           >
             Overdue
@@ -133,32 +152,31 @@ export default function TaskList({
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto no-scrollbar">
+      <div className="flex-grow overflow-y-auto no-scrollbar pr-1 -mr-1">
         {isLoading ? (
           // Loading skeletons
           Array(5).fill(0).map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm p-4 mb-3">
+            <div key={i} className="bg-white rounded-lg border border-gray-100 p-3.5 mb-3">
               <div className="flex justify-between items-start mb-2">
-                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-3/4" />
                 <div className="flex space-x-1">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-3 w-3" />
+                  <Skeleton className="h-3 w-3" />
                 </div>
               </div>
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-5/6 mb-3" />
+              <Skeleton className="h-3 w-full mb-2" />
+              <Skeleton className="h-3 w-5/6 mb-3" />
               <div className="flex flex-wrap gap-2 items-center">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-24" />
               </div>
             </div>
           ))
         ) : sortedTasks.length === 0 ? (
-          <div className="text-center py-10 text-neutral-400">
-            <span className="material-icons text-4xl mb-2">task_alt</span>
-            <p>No tasks to display</p>
-            {searchQuery && <p className="mt-2">Try a different search term</p>}
+          <div className="text-center py-10 bg-white/50 rounded-lg border border-gray-100">
+            <span className="material-icons text-3xl text-gray-300 mb-2">task_alt</span>
+            <p className="text-gray-500">No tasks to display</p>
+            {searchQuery && <p className="mt-1 text-sm text-gray-400">Try a different search term</p>}
           </div>
         ) : (
           sortedTasks.map(task => (
@@ -173,11 +191,11 @@ export default function TaskList({
       </div>
 
       <button 
-        className="mt-4 bg-[#f50057] hover:bg-pink-600 text-white font-medium py-3 px-4 rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="group mt-4 btn-macos flex items-center justify-center py-2 px-4 rounded-md shadow-sm animate-scale w-full"
         onClick={onAddTask}
       >
-        <span className="material-icons mr-2">add</span>
-        New Task
+        <span className="material-icons text-primary mr-1.5 text-sm">add</span>
+        <span className="text-sm font-medium">New Task</span>
       </button>
     </section>
   );

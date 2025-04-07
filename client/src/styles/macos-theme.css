@@ -1,0 +1,124 @@
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 0 0% 98%;      /* Very light gray, almost white */
+    --foreground: 0 0% 20%;      /* Dark gray for text, not pure black */
+    
+    /* Card and surfaces */
+    --card: 0 0% 100%;           /* Pure white for cards */
+    --card-foreground: 0 0% 20%; /* Same dark gray for text */
+    
+    /* Primary action color - macOS blue */
+    --primary: 211 100% 50%;     /* macOS blue */
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary action elements */
+    --secondary: 0 0% 96%;       /* Very light gray */
+    --secondary-foreground: 0 0% 20%;
+    
+    /* Muted elements */
+    --muted: 0 0% 94%;           /* Light gray for muted areas */
+    --muted-foreground: 0 0% 45%;/* Medium gray for muted text */
+    
+    /* Accent elements */
+    --accent: 210 20% 96%;       /* Very subtle blue tint */
+    --accent-foreground: 0 0% 20%;
+    
+    /* Other UI elements */
+    --destructive: 0 84% 60%;    /* Softer red than standard */
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borders and inputs */
+    --border: 0 0% 88%;          /* Light gray border */
+    --input: 0 0% 88%;           /* Light gray input */
+    --ring: 210 100% 50%;        /* macOS blue for focus rings */
+    
+    /* Chart colors - more muted but still distinguishable */
+    --chart-1: 211 100% 50%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 325 78% 49%;
+    --chart-4: 29 80% 44%;
+    --chart-5: 173 80% 36%;
+    
+    /* Radius - slightly rounded */
+    --radius: 0.75rem;
+  }
+}
+
+/* macOS-like UI adjustments */
+@layer components {
+  /* Translucent effect for cards and dialogs */
+  .card, .dialog-content {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  /* Button styling */
+  .btn-macos {
+    @apply font-medium shadow-sm transition-all duration-200 ease-in-out;
+    background: linear-gradient(to bottom, hsl(0, 0%, 98%), hsl(0, 0%, 95%));
+    border: 1px solid hsl(0, 0%, 85%);
+  }
+  
+  .btn-macos:hover {
+    background: linear-gradient(to bottom, hsl(0, 0%, 96%), hsl(0, 0%, 93%));
+  }
+  
+  .btn-macos:active {
+    background: linear-gradient(to bottom, hsl(0, 0%, 91%), hsl(0, 0%, 94%));
+  }
+
+  /* macOS header style */
+  .header-macos {
+    @apply bg-white/80 backdrop-blur-md border-b border-gray-200;
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Task cards with subtle hover effect */
+  .task-card {
+    @apply bg-white shadow-sm border border-gray-100 transition-all duration-200;
+  }
+  
+  .task-card:hover {
+    @apply shadow-md transform -translate-y-0.5;
+  }
+
+  /* Typography adjustments */
+  body {
+    @apply text-[15px] leading-relaxed;
+    font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", sans-serif;
+  }
+
+  /* Calendar adjustments */
+  .calendar-container {
+    @apply rounded-lg overflow-hidden border border-gray-200 bg-white;
+  }
+
+  /* Priority indicators - more subdued */
+  .priority-indicator {
+    @apply rounded-full w-2 h-2 inline-block;
+  }
+  
+  .priority-low {
+    @apply bg-green-400;
+  }
+  
+  .priority-medium {
+    @apply bg-amber-400;
+  }
+  
+  .priority-high {
+    @apply bg-rose-400;
+  }
+}
+
+/* MacOS-like animations */
+@layer utilities {
+  .animate-scale {
+    transition: transform 0.1s ease-out;
+  }
+  
+  .animate-scale:active {
+    transform: scale(0.97);
+  }
+}

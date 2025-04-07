@@ -17,9 +17,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState<"tasks" | "calendar">("tasks");
   const [calendarView, setCalendarView] = useState<CalendarViewType>("day");
   const [searchQuery, setSearchQuery] = useState("");
-  // For testing/demo purposes, we'll use April 5, 2025 as "today"
-  // In a real app, we'd use new Date() for the current date
-  const [currentDate, setCurrentDate] = useState(new Date('2025-04-05T12:00:00.000Z'));
+  const [currentDate, setCurrentDate] = useState(new Date());
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -27,7 +25,6 @@ export default function Home() {
 
   const { data: tasks = [], isLoading, error } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
-    // Use callbacks to log in useEffect instead
   });
 
   const handleAddTask = () => {
@@ -50,14 +47,13 @@ export default function Home() {
   };
 
   const handleDateChange = (date: Date) => {
-    console.log("Home component received date change:", date);
     setCurrentDate(date);
   };
   
   // Log tasks data when it changes
   useEffect(() => {
     if (tasks.length > 0) {
-      console.log("Tasks data updated:", tasks);
+      console.log("Tasks data updated:", tasks.length);
     }
   }, [tasks]);
 
@@ -70,34 +66,42 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header 
         onAddTask={handleAddTask} 
         isMobile={isMobile}
       />
 
       {isMobile && (
-        <div className="bg-white shadow-md">
+        <div className="bg-white shadow-sm border-b border-gray-100">
           <div className="flex justify-around">
             <button 
-              className={`flex-1 py-3 text-center ${activeView === 'tasks' ? 'text-primary border-b-2 border-primary' : 'text-neutral-300'}`}
+              className={`flex-1 py-3 text-center ${
+                activeView === 'tasks' 
+                  ? 'text-primary border-b-2 border-primary' 
+                  : 'text-gray-400'
+              }`}
               onClick={() => setActiveView('tasks')}
             >
-              <span className="material-icons block mx-auto mb-1">check_circle</span>
-              Tasks
+              <span className="material-icons block mx-auto mb-1 text-sm">check_circle</span>
+              <span className="text-xs">Tasks</span>
             </button>
             <button 
-              className={`flex-1 py-3 text-center ${activeView === 'calendar' ? 'text-primary border-b-2 border-primary' : 'text-neutral-300'}`}
+              className={`flex-1 py-3 text-center ${
+                activeView === 'calendar' 
+                  ? 'text-primary border-b-2 border-primary' 
+                  : 'text-gray-400'
+              }`}
               onClick={() => setActiveView('calendar')}
             >
-              <span className="material-icons block mx-auto mb-1">calendar_today</span>
-              Calendar
+              <span className="material-icons block mx-auto mb-1 text-sm">calendar_today</span>
+              <span className="text-xs">Calendar</span>
             </button>
           </div>
         </div>
       )}
 
-      <main className="flex-grow flex flex-col md:flex-row container mx-auto px-4 py-6 gap-6">
+      <main className="flex-grow flex flex-col md:flex-row container mx-auto px-4 py-5 gap-5">
         <TaskList 
           tasks={filteredTasks}
           isLoading={isLoading}
@@ -109,7 +113,6 @@ export default function Home() {
           setSearchQuery={setSearchQuery}
           className={isMobile && activeView !== 'tasks' ? 'hidden' : 'md:w-2/5 lg:w-1/3 flex flex-col h-full'}
         />
-
         <Calendar 
           tasks={tasks}
           view={calendarView}
@@ -117,12 +120,12 @@ export default function Home() {
           onEditTask={handleEditTask}
           currentDate={currentDate}
           onDateChange={handleDateChange}
-          className={isMobile && activeView !== 'calendar' ? 'hidden' : 'md:w-3/5 lg:w-2/3 bg-white rounded-lg shadow-md p-4 flex flex-col h-full'}
+          className={isMobile && activeView !== 'calendar' ? 'hidden' : 'md:w-3/5 lg:w-2/3 flex flex-col h-full'}
         />
       </main>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-lg">
           <TaskForm 
             task={selectedTask}
             onTaskSaved={handleTaskCreated}
